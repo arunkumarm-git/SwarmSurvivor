@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>SwarmSurvivor.io</title>
+    <!-- CrazyGames SDK -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
+  </head>
+  <body>
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Glassmorphism HUD Overlay -->
+    <div id="ui-container" class="no-pointer">
+      
+      <!-- Top XP Progress Bar -->
+      <div class="xp-bar-container">
+        <div class="xp-bar-fill"></div>
+      </div>
+
+      <!-- Header: Level, Timer & Score -->
+      <header class="hud-header">
+        <div class="hud-panel level-badge">
+          LEVEL 1
+        </div>
+        <div class="hud-panel timer-badge">
+          00:00
+        </div>
+        <div class="hud-panel score-badge">
+          SCORE: <span class="score-val">000000</span>
+        </div>
+      </header>
+
+      <!-- Real-time Leaderboard Widget -->
+      <div class="leaderboard-panel hud-panel">
+        <div class="leaderboard-title">LEADERBOARD</div>
+        <ol class="leaderboard-list">
+          <!-- Dynamic leaderboard rows -->
+        </ol>
+      </div>
+
+      <!-- Footer: HP Bar & Instructions -->
+      <footer class="hud-footer">
+        <!-- Health Bar -->
+        <div class="hud-panel health-panel">
+          <div class="health-label">
+            <span>HEALTH</span>
+            <span class="health-val">100/100</span>
+          </div>
+          <div class="health-bar-container">
+            <div class="health-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Controls Guide -->
+        <div class="hud-panel controls-panel">
+          <div class="controls-title">
+            <span class="glowing-dot"></span>SYSTEM: ONLINE
+          </div>
+          <div>WASD / ARROWS TO MOVE</div>
+          <div>SURVIVE THE SWARM</div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Upgrade Overlay Panel -->
+    <div id="upgrade-overlay" class="no-pointer">
+      <div class="upgrade-container interactive">
+        <h2 class="upgrade-title">SYSTEM UPGRADE</h2>
+        <p class="upgrade-subtitle">SELECT AN ENHANCEMENT PROTOCOL</p>
+        <div class="cards-wrapper">
+          <!-- Cards generated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Username Entry Overlay -->
+    <div id="username-overlay">
+      <div class="username-container hud-panel interactive">
+        <h2 class="username-title">PILOT IDENTIFICATION</h2>
+        <p class="username-subtitle">REGISTER YOUR CALLSIGN</p>
+        <input type="text" id="username-input" maxlength="15" placeholder="SURVIVOR_X" />
+        <button id="username-submit-btn">INITIALIZE CORE</button>
+      </div>
+    </div>
+
+    <!-- Game Over / Respawn Overlay -->
+    <div id="gameover-overlay" style="display: none;">
+      <div class="gameover-container hud-panel interactive">
+        <h2 class="gameover-title">SYSTEM OVERLOAD</h2>
+        <p class="gameover-subtitle">ENGINE FAILURE DETECTED</p>
+        
+        <div class="stats-summary">
+          <div>FINAL SCORE: <span id="final-score-val" class="score-val">000000</span></div>
+          <div>FINAL LEVEL: <span id="final-level-val" class="level-val">1</span></div>
+        </div>
+        
+        <!-- Double Score Rewarded Ad Button -->
+        <button id="reward-ad-btn">💾 DOUBLE SCORE (WATCH AD)</button>
+        
+        <!-- Normal Respawn Button -->
+        <button id="respawn-btn" disabled>⚡ RESPAWN PROTOCOL</button>
+      </div>
+    </div>
+
+    <!-- Script Entrypoint -->
+    <script type="module" src="/src/Game.ts"></script>
+  </body>
+</html>

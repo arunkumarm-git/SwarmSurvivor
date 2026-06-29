@@ -78,9 +78,11 @@ export class Game {
     // Set canvas dimension for first frame
     this.resize();
 
-    // Parse invite roomId from URL params
+    // Parse invite roomId from URL params or SDK getInviteParam
     const urlParams = new URLSearchParams(window.location.search);
-    const inviteRoomId = urlParams.get('roomId') || 'global';
+    const inviteRoomId = urlParams.get('roomId') || 
+                         CrazyGamesManager.getInstance().getInviteParam('roomId') || 
+                         'global';
 
     // Notify SDK loading start
     CrazyGamesManager.getInstance().loadingStart();

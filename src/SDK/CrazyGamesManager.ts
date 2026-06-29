@@ -128,7 +128,12 @@ export class CrazyGamesManager {
   public getInviteLink(params: Record<string, string>): Promise<string> {
     if (this.sdk && this.sdk.game) {
       try {
-        return this.sdk.game.inviteLink(params);
+        const result = this.sdk.game.inviteLink(params);
+        if (result instanceof Promise) {
+          return result;
+        } else if (typeof result === 'string') {
+          return Promise.resolve(result);
+        }
       } catch (e) {
         console.error('Error calling CrazyGames inviteLink:', e);
       }
@@ -139,6 +144,73 @@ export class CrazyGamesManager {
       url.searchParams.set(key, params[key]);
     }
     return Promise.resolve(url.toString());
+  }
+
+  /**
+   * Displays the CrazyGames platform-level invite button in the game's footer
+   */
+  public showInviteButton(roomId: string): void {
+    if (this.sdk && this.sdk.game) {
+      try {
+        this.sdk.game.showInviteButton({ roomId });
+        console.log('[CrazyGames SDK] showInviteButton with roomId:', roomId);
+      } catch (e) {
+        console.error('Error calling CrazyGames showInviteButton:', e);
+      }
+    } else {
+      console.log('[CrazyGames Fallback] showInviteButton() with roomId:', roomId);
+    }
+  }
+
+  /**
+   * Hides the CrazyGames platform-level invite button
+   */
+  public hideInviteButton(): void {
+    if (this.sdk && this.sdk.game) {
+      try {
+        this.sdk.game.hideInviteButton();
+        console.log('[CrazyGames SDK] hideInviteButton');
+      } catch (e) {
+        console.error('Error calling CrazyGames hideInviteButton:', e);
+      }
+    } else {
+      console.log('[CrazyGames Fallback] hideInviteButton()');
+    }
+  }
+
+  /**
+   * Informs the CrazyGames platform of the player's room state
+   */
+  public updateRoom(roomId: string, isJoinable: boolean = true): void {
+    if (this.sdk && this.sdk.game) {
+      try {
+        this.sdk.game.updateRoom({
+          roomId: roomId,
+          isJoinable: isJoinable,
+          inviteParams: { roomId: roomId }
+        });
+        console.log('[CrazyGames SDK] updateRoom with roomId:', roomId, 'isJoinable:', isJoinable);
+      } catch (e) {
+        console.error('Error calling CrazyGames updateRoom:', e);
+      }
+    } else {
+      console.log('[CrazyGames Fallback] updateRoom() with roomId:', roomId, 'isJoinable:', isJoinable);
+    }
+  }
+
+  /**
+   * Gets the invite parameter passed to the game on start
+   */
+  public getInviteParam(paramName: string): string | null {
+    if (this.sdk && this.sdk.game) {
+      try {
+        const val = this.sdk.game.getInviteParam(paramName);
+        if (val) return val;
+      } catch (e) {
+        console.error('Error calling getInviteParam:', e);
+      }
+    }
+    return null;
   }
 
   /**

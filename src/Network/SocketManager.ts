@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import type { Game } from '../Game';
 import { RivalPlayer } from '../Entities/RivalPlayer';
+import { CrazyGamesManager } from '../SDK/CrazyGamesManager';
 
 export class SocketManager {
   private static instance: SocketManager | null = null;
@@ -36,6 +37,9 @@ export class SocketManager {
 
     this.socket.on('connect', () => {
       console.log('Connected to server with ID:', this.socket?.id, 'in room:', roomId);
+      // Update room state and invite button in SDK
+      CrazyGamesManager.getInstance().updateRoom(roomId);
+      CrazyGamesManager.getInstance().showInviteButton(roomId);
     });
 
     this.socket.on('init', (data: { id: string }) => {
@@ -183,5 +187,6 @@ export class SocketManager {
       this.socket = null;
     }
     this.rivals.clear();
+    CrazyGamesManager.getInstance().hideInviteButton();
   }
 }

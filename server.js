@@ -2,12 +2,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 
-const app = reportExpressErrors(express());
-function reportExpressErrors(expressApp) {
-  // Simple wrapper or just direct app, let's keep it clean
-  return expressApp;
-}
-
+const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -23,8 +18,10 @@ const players = {};
 const mapWidth = 3000;
 const mapHeight = 3000;
 
-const getRankedLeaderboard = () => {
-  return Object.values(players)
+// Calculate leaderboard for a specific room
+const getRankedLeaderboard = (roomId) => {
+  const roomPlayers = Object.values(players).filter(p => p.roomId === roomId);
+  return roomPlayers
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 5)
     .map(p => ({
@@ -35,16 +32,37 @@ const getRankedLeaderboard = () => {
     }));
 };
 
+// Broadcast updates partitioned by rooms
 const broadcastState = () => {
-  io.emit('stateUpdate', {
-    players,
-    leaderboard: getRankedLeaderboard()
+  const rooms = new Set();
+  Object.values(players).forEach(p => {
+    if (p.roomId) rooms.add(p.roomId);
+  });
+  if (rooms.size === 0) rooms.add('global');
+
+  rooms.forEach(rId => {
+    // Filter players in this room
+    const roomPlayers = {};
+    Object.keys(players).forEach(id => {
+      if (players[id].roomId === rId) {
+        roomPlayers[id] = players[id];
+      }
+    });
+
+    io.to(rId).emit('stateUpdate', {
+      players: roomPlayers,
+      leaderboard: getRankedLeaderboard(rId)
+    });
   });
 };
 
 io.on('connection', (socket) => {
   const username = socket.handshake.query.name || 'Survivor';
-  console.log(`Player connected: ${socket.id} (${username})`);
+  const roomId = socket.handshake.query.roomId || 'global';
+  
+  // Join socket.io room
+  socket.join(roomId);
+  console.log(`Player connected: ${socket.id} (${username}) joined room [${roomId}]`);
   
   // Spawn player at random coordinate
   const radius = 18;
@@ -54,6 +72,7 @@ io.on('connection', (socket) => {
   players[socket.id] = {
     id: socket.id,
     name: username,
+    roomId: roomId,
     x: spawnX,
     y: spawnY,
     health: 100,
@@ -91,28 +110,28 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Handle shoot event
+  // Handle shoot event within player's room
   socket.on('shoot', (projectileData) => {
-    // Broadcast to all other clients
-    socket.broadcast.emit('projectileSpawn', projectileData);
+    const player = players[socket.id];
+    if (player) {
+      socket.to(player.roomId).emit('projectileSpawn', projectileData);
+    }
   });
   
-  // Handle hit event
+  // Handle hit event within player's room
   socket.on('playerHit', (data) => {
     const targetId = data.targetId;
     const damage = data.damage || 0;
     const targetPlayer = players[targetId];
+    const player = players[socket.id];
     
-    if (targetPlayer) {
+    if (targetPlayer && player && targetPlayer.roomId === player.roomId) {
       targetPlayer.health = Math.max(0, targetPlayer.health - damage);
       
       // Check if player died
       if (targetPlayer.health <= 0) {
-        // Broadcast player death
-        io.emit('playerDeath', { id: targetId, x: targetPlayer.x, y: targetPlayer.y });
-        
-        // Note: We don't automatically respawn the player now.
-        // They will watch an ad and then call requestRespawn!
+        // Broadcast player death only to players in the same room
+        io.to(player.roomId).emit('playerDeath', { id: targetId, x: targetPlayer.x, y: targetPlayer.y });
       }
     }
   });
@@ -141,7 +160,10 @@ io.on('connection', (socket) => {
   
   // Handle disconnect
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id} (${username})`);
+    const player = players[socket.id];
+    const uName = player ? player.name : 'Unknown';
+    const rId = player ? player.roomId : 'global';
+    console.log(`Player disconnected: ${socket.id} (${uName}) from room [${rId}]`);
     delete players[socket.id];
     broadcastState();
   });

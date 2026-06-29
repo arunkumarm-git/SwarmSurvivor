@@ -8,7 +8,7 @@ export class SocketManager {
   private game: Game | null = null;
   private rivals: Map<string, RivalPlayer> = new Map();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): SocketManager {
     if (!SocketManager.instance) {
@@ -18,21 +18,24 @@ export class SocketManager {
   }
 
   /**
-   * Connects to the server with username passed in handshake query parameters
+   * Connects to the server with username and roomId passed in handshake query parameters
    */
-  public connect(game: Game, username: string): void {
+  public connect(game: Game, username: string, roomId: string): void {
     this.game = game;
     const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000'
-      : window.location.origin;
+      : 'https://swarmsurvivor.onrender.com';
 
-    // Connect with name handshake
+    // Connect with name and room handshake
     this.socket = io(serverUrl, {
-      query: { name: username }
+      query: {
+        name: username,
+        roomId: roomId
+      }
     });
 
     this.socket.on('connect', () => {
-      console.log('Connected to server with ID:', this.socket?.id);
+      console.log('Connected to server with ID:', this.socket?.id, 'in room:', roomId);
     });
 
     this.socket.on('init', (data: { id: string }) => {
@@ -155,6 +158,13 @@ export class SocketManager {
     if (this.socket?.connected) {
       this.socket.emit('requestRespawn');
     }
+  }
+
+  /**
+   * Gets the client's current connection socket ID
+   */
+  public getSocketId(): string | null {
+    return this.socket?.id || null;
   }
 
   /**

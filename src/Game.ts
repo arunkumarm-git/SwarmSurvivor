@@ -78,6 +78,10 @@ export class Game {
     // Set canvas dimension for first frame
     this.resize();
 
+    // Parse invite roomId from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteRoomId = urlParams.get('roomId') || 'global';
+
     // Notify SDK loading start
     CrazyGamesManager.getInstance().loadingStart();
 
@@ -92,8 +96,8 @@ export class Game {
         this.playerName = username;
         userOverlay.style.display = 'none';
 
-        // Connect SocketManager passing name
-        SocketManager.getInstance().connect(this, this.playerName);
+        // Connect SocketManager passing name and room ID
+        SocketManager.getInstance().connect(this, this.playerName, inviteRoomId);
 
         // Stop loading and transition gameplay state in SDK
         CrazyGamesManager.getInstance().loadingStop();
@@ -138,6 +142,48 @@ export class Game {
         });
       });
     }
+
+    // Bind invite friend button click handler
+    const inviteBtn = document.getElementById('invite-btn');
+    if (inviteBtn) {
+      inviteBtn.addEventListener('click', () => {
+        const socketId = SocketManager.getInstance().getSocketId();
+        if (!socketId) {
+          console.warn('Socket not connected yet.');
+          return;
+        }
+        CrazyGamesManager.getInstance().getInviteLink({ roomId: socketId }).then((link) => {
+          navigator.clipboard.writeText(link).then(() => {
+            inviteBtn.innerText = 'LINK COPIED!';
+            setTimeout(() => {
+              inviteBtn.innerText = '🔗 INVITE FRIEND';
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy invite link to clipboard:', err);
+            alert('Share this invite link: ' + link);
+          });
+        });
+      });
+    }
+
+    // Register join room event listener from CrazyGames SDK
+    CrazyGamesManager.getInstance().registerJoinRoomListener((params) => {
+      if (params.roomId) {
+        console.log('SDK requested room switch to:', params.roomId);
+        SocketManager.getInstance().disconnect();
+        SocketManager.getInstance().connect(this, this.playerName, params.roomId);
+
+        // Update URL to match room ID
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('roomId', params.roomId);
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    });
+
+    // Register audio mute settings listener from CrazyGames SDK
+    CrazyGamesManager.getInstance().registerAudioSettingsListener((mute) => {
+      console.log(`[Audio compliance] Game sound is now ${mute ? 'MUTED' : 'UNMUTED'} globally.`);
+    });
 
     // Start game loop
     requestAnimationFrame((timestamp) => this.loop(timestamp));

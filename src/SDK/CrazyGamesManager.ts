@@ -121,4 +121,57 @@ export class CrazyGamesManager {
       }, 1000);
     }
   }
+
+  /**
+   * Fetches an invite link with parameters from the CrazyGames SDK
+   */
+  public getInviteLink(params: Record<string, string>): Promise<string> {
+    if (this.sdk && this.sdk.game) {
+      try {
+        return this.sdk.game.inviteLink(params);
+      } catch (e) {
+        console.error('Error calling CrazyGames inviteLink:', e);
+      }
+    }
+    // Local fallback link generation
+    const url = new URL(window.location.href);
+    for (const key in params) {
+      url.searchParams.set(key, params[key]);
+    }
+    return Promise.resolve(url.toString());
+  }
+
+  /**
+   * Registers a listener that triggers when a user joins a room via an invite link
+   */
+  public registerJoinRoomListener(onJoin: (params: any) => void): void {
+    if (this.sdk && this.sdk.game) {
+      try {
+        this.sdk.game.addJoinRoomListener((params: any) => {
+          console.log('[CrazyGames SDK] Join room listener triggered:', params);
+          onJoin(params);
+        });
+      } catch (e) {
+        console.error('Error adding JoinRoomListener:', e);
+      }
+    }
+  }
+
+  /**
+   * Registers a settings listener to handle global volume muting requests from the SDK
+   */
+  public registerAudioSettingsListener(onMuteChange: (mute: boolean) => void): void {
+    if (this.sdk && this.sdk.game) {
+      try {
+        this.sdk.game.addSettingsChangeListener((settings: { muteAudio: boolean }) => {
+          console.log('[CrazyGames SDK] Settings changed:', settings);
+          if (settings.muteAudio !== undefined) {
+            onMuteChange(settings.muteAudio);
+          }
+        });
+      } catch (e) {
+        console.error('Error adding SettingsChangeListener:', e);
+      }
+    }
+  }
 }
